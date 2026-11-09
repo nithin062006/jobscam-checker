@@ -3,3 +3,4 @@ __pycache__/
 *.pyc
 feedback.jsonl
 .DS_Store
+ml/model.joblib

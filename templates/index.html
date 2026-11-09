@@ -12,6 +12,12 @@
 <section class="panel">
   <textarea id="text" placeholder="Paste the full job offer, recruiter message, or email here..."></textarea>
   <input type="text" id="company" maxlength="80" placeholder="Company name (optional, we try to detect it)">
+  {% if ai_provider %}
+  <label class="hint" style="display:flex;gap:8px;align-items:flex-start;margin-top:12px;cursor:pointer">
+    <input type="checkbox" id="useai" style="margin-top:4px">
+    <span>Also get an <b>AI analysis</b>. This sends your text to an outside AI provider ({{ ai_provider|capitalize }}) to read it. Off by default; otherwise your text never leaves our server. <a href="/privacy">Details</a></span>
+  </label>
+  {% endif %}
   <div class="row">
     <button class="btn primary" id="go">Check this offer</button>
     <label class="btn ghost" for="shot">📷 Upload screenshot</label>
@@ -51,6 +57,14 @@
     <h3>🔎 Verify the company</h3>
     <div id="vinfo" class="hint"></div>
     <div id="links" class="chips"></div>
+  </div>
+  <div class="sec hidden" id="domaincard">
+    <h3>🌐 Domain check</h3>
+    <div id="domainout"></div>
+  </div>
+  <div class="sec hidden" id="aicard">
+    <h3>🤖 AI analysis <span class="tag">AI-generated, can be wrong</span></h3>
+    <div id="aiout" class="hint">Analysing…</div>
   </div>
   <div class="sec">
     <div class="row" style="margin-top:0">
@@ -92,6 +106,42 @@ let last = null;
 
 function el(tag, cls, text){ const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
 
+const VERDICT = {likely_scam: "Likely a scam", suspicious: "Suspicious", likely_genuine: "Looks like a normal message", unclear: "Unclear"};
+
+async function runExtras(d, text) {
+  const dc = $("domaincard"), ac = $("aicard");
+  dc.classList.add("hidden"); ac.classList.add("hidden");
+  const hosts = (d.verify && d.verify.domains) || [];
+  if (hosts.length) {
+    try {
+      const r = await fetch("/api/forensics", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({domains: hosts})});
+      const j = await r.json(); const out = $("domainout"); out.innerHTML = "";
+      (j.results || []).forEach(x => {
+        const box = el("div", "flag");
+        box.append(el("b", "", x.domain + (x.registered ? " · registered " + x.registered : "")), el("span", "", x.note));
+        if (x.verdict === "established") box.style.borderLeftColor = "var(--low)";
+        else if (x.verdict === "unknown") box.style.borderLeftColor = "var(--muted)";
+        out.appendChild(box);
+      });
+      if ((j.results || []).length) dc.classList.remove("hidden");
+    } catch (e) { /* the domain check is optional */ }
+  }
+  const cb = $("useai");
+  if (cb && cb.checked) {
+    ac.classList.remove("hidden"); $("aiout").textContent = "Analysing…";
+    try {
+      const r = await fetch("/api/ai", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({text})});
+      const j = await r.json(); const out = $("aiout"); out.innerHTML = "";
+      if (j.error) { out.textContent = j.error; return; }
+      out.append(el("div", "lvl", VERDICT[j.verdict] || "Unclear"));
+      out.append(el("div", "hint", "Confidence " + Math.round(j.confidence * 100) + "%" + (j.scam_type && j.scam_type !== "none" ? " · " + j.scam_type : "")));
+      if (j.explanation) out.append(el("p", "", j.explanation));
+      if (j.tactics.length) { const t = el("div", "tags"); j.tactics.forEach(x => t.appendChild(el("span", "tag", x))); out.append(t); }
+      if (j.what_to_check.length) { const ul = el("ul"); j.what_to_check.forEach(x => ul.appendChild(el("li", "", x))); out.append(el("h3", "", "Worth checking"), ul); }
+    } catch (e) { $("aiout").textContent = "The AI analysis is unavailable right now."; }
+  }
+}
+
 $("go").addEventListener("click", async () => {
   $("err").classList.add("hidden"); $("result").classList.add("hidden");
   $("fb").classList.remove("hidden"); $("fbthanks").classList.add("hidden"); $("sharemsg").textContent = "";
@@ -122,6 +172,7 @@ $("go").addEventListener("click", async () => {
     v.links.forEach(l => { const a = el("a", "chip", l.label + " ↗"); a.href = l.url; a.target = "_blank"; a.rel = "noopener"; $("links").appendChild(a); });
 
     $("result").classList.remove("hidden");
+    runExtras(d, $("text").value);
     // animate the gauge and the number
     const arc = $("arc"); arc.style.strokeDashoffset = 157;
     requestAnimationFrame(() => requestAnimationFrame(() => { arc.style.strokeDashoffset = 157 * (1 - d.score / 100); }));

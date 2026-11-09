@@ -1,11 +1,17 @@
+import datetime as dt
+import hmac
 import json
+import os
 import time
 from collections import defaultdict, deque
 from pathlib import Path
 
 from flask import Flask, jsonify, render_template, request
 
+import llm
 from checker import analyze
+from forensics import check_domain, valid_host
+from telegram_bot import handle_update, send_message
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 20_000  # small payloads only
@@ -15,8 +21,12 @@ CONTACT_EMAIL = "vnaganithin@gmail.com"
 
 # Simple in-memory per-IP rate limiting (resets on restart; fine for one small instance).
 WINDOW_SECONDS = 600
-LIMITS = {"check": 25, "feedback": 40}
+LIMITS = {"check": 25, "feedback": 40, "forensics": 30, "ai": 8, "telegram": 20}
 _hits = defaultdict(deque)
+
+# Hard daily ceiling on AI calls so a burst of traffic can't run up a bill.
+AI_DAILY_CAP = int(os.environ.get("AI_DAILY_CAP", "300"))
+_ai_day = {"date": None, "count": 0}
 
 
 def client_ip() -> str:
@@ -24,9 +34,9 @@ def client_ip() -> str:
     return (fwd.split(",")[0].strip() or request.remote_addr or "unknown")
 
 
-def rate_limited(bucket: str) -> bool:
+def rate_limited(bucket: str, who: str = None) -> bool:
     now = time.time()
-    q = _hits[(bucket, client_ip())]
+    q = _hits[(bucket, who or client_ip())]
     while q and now - q[0] > WINDOW_SECONDS:
         q.popleft()
     if len(q) >= LIMITS[bucket]:
@@ -38,9 +48,19 @@ def rate_limited(bucket: str) -> bool:
     return False
 
 
+def ai_budget_left() -> bool:
+    today = dt.date.today().isoformat()
+    if _ai_day["date"] != today:
+        _ai_day.update(date=today, count=0)
+    if _ai_day["count"] >= AI_DAILY_CAP:
+        return False
+    _ai_day["count"] += 1
+    return True
+
+
 @app.context_processor
 def inject_globals():
-    return {"contact_email": CONTACT_EMAIL}
+    return {"contact_email": CONTACT_EMAIL, "ai_provider": llm.provider()}
 
 
 @app.get("/")
@@ -67,6 +87,48 @@ def check():
     company = str(data.get("company", ""))[:80]
     # The submitted text is analysed in memory and never stored.
     return jsonify(analyze(text, company))
+
+
+@app.post("/api/forensics")
+def forensics():
+    if rate_limited("forensics"):
+        return jsonify({"error": "Too many lookups. Please wait a few minutes."}), 429
+    data = request.get_json(silent=True) or {}
+    hosts = [str(h).lower().strip()[:253] for h in (data.get("domains") or [])][:3]
+    return jsonify({"results": [check_domain(h) for h in hosts if valid_host(h.removeprefix("www."))]})
+
+
+@app.post("/api/ai")
+def ai():
+    if not llm.provider():
+        return jsonify({"error": "AI analysis isn't enabled on this site."}), 404
+    if rate_limited("ai"):
+        return jsonify({"error": "Too many AI analyses in a short time. Please wait a few minutes."}), 429
+    if not ai_budget_left():
+        return jsonify({"error": "The AI analysis limit for today has been reached. Try again tomorrow."}), 503
+    data = request.get_json(silent=True) or {}
+    # Only sent to the AI provider because the user ticked the opt-in box; never stored here.
+    result = llm.analyze_ai(str(data.get("text", ""))[:4000])
+    if result is None:
+        return jsonify({"error": "The AI analysis is unavailable right now."}), 502
+    return jsonify(result)
+
+
+@app.post("/telegram/webhook")
+def telegram_webhook():
+    token = os.environ.get("TELEGRAM_BOT_TOKEN")
+    secret = os.environ.get("TELEGRAM_WEBHOOK_SECRET")
+    if not token or not secret:
+        return "", 404
+    sent = request.headers.get("X-Telegram-Bot-Api-Secret-Token", "")
+    if not hmac.compare_digest(sent, secret):
+        return "", 403
+    update = request.get_json(silent=True) or {}
+    chat = ((update.get("message") or update.get("edited_message") or {}).get("chat") or {}).get("id")
+    if chat is not None and rate_limited("telegram", f"tg:{chat}"):
+        return "ok"
+    handle_update(update, lambda chat_id, text: send_message(token, chat_id, text))
+    return "ok"
 
 
 @app.post("/api/feedback")

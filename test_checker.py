@@ -54,5 +54,38 @@ def test_steps_tailored_to_fee_scam():
     assert any("1930" in s for s in r["steps"])
 
 
+def test_interview_feedback_is_not_a_fee():
+    r = analyze("Dear Applicant, your interview feedback is positive. Our HR team will reach out to discuss compensation and joining date.")
+    assert not any(f["id"] == "fee" for f in r["flags"]), r
+
+
+def test_negated_fee_is_not_flagged():
+    r = analyze("Congratulations on the offer. There is no registration fee or deposit at any stage of our hiring process.")
+    assert not any(f["id"] == "fee" for f in r["flags"]), r
+
+
+def test_real_fee_still_flagged():
+    r = analyze("You are selected. Pay a registration fee of Rs 500 today to confirm your seat.")
+    assert any(f["id"] == "fee" for f in r["flags"]), r
+
+
+def test_wage_lure_and_chat_link():
+    r = analyze("Dear you have passed our interview, wage is Rs 8000/ day. Please contact discuss detail: wa.me/910000000000")
+    ids = {f["id"] for f in r["flags"]}
+    assert {"wage_lure", "direct_chat_link"} <= ids and r["level"] in ("Medium", "High"), r
+
+
+def test_rating_task_flagged():
+    r = analyze("We invite you to remote part-time work. Your job is to rate products and help merchants increase product visibility and sales. The work is legal and compliant.")
+    ids = {f["id"] for f in r["flags"]}
+    assert "rating_task" in ids and r["level"] in ("Medium", "High"), r
+
+
+def test_monthly_salary_in_genuine_offer_not_a_lure():
+    r = analyze("Hi Asha, we are offering the Analyst role at Initech with a salary of Rs 60,000 per month. Please confirm your availability for a call next week.")
+    assert not any(f["id"] == "wage_lure" for f in r["flags"]), r
+    assert r["level"] == "Low", r
+
+
 def test_short_input_rejected():
     assert "error" in analyze("hi")
