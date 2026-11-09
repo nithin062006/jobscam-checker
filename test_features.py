@@ -189,3 +189,37 @@ def test_bot_start_and_photo():
 
 def test_bot_ignores_updates_without_chat():
     assert telegram_bot.handle_update({"edited_channel_post": {}}, lambda c, t: None) is False
+
+
+# ---- contribute ----
+import contribute as _c
+
+
+def test_scrub_masks_personal_details():
+    t = _c.scrub("Call +91 98765 43210 or mail ravi.k@gmail.com PAN ABCDE1234F Aadhaar 1234 5678 9012 otp is 483921 acct 123456789012")
+    for bad in ("98765", "ravi.k", "ABCDE1234F", "5678", "483921", "123456789012"):
+        assert bad not in t
+    assert "@gmail.com" in t
+
+
+def test_prepare_validation():
+    assert _c.prepare("x" * 100, "bogus")[1]
+    assert _c.prepare("short", "scam")[1]
+    row, err = _c.prepare("Pay the registration fee today to confirm your job offer now", "scam", "High", 90)
+    assert not err and row["user_label"] == "scam" and row["text_hash"]
+
+
+def test_contribute_endpoint(monkeypatch):
+    import app as appmod
+    c = appmod.app.test_client()
+    appmod.BUCKETS.clear() if hasattr(appmod, "BUCKETS") else None
+    monkeypatch.delenv("SUPABASE_URL", raising=False)
+    assert c.post("/api/contribute", json={}).status_code == 503
+    monkeypatch.setenv("SUPABASE_URL", "https://x.supabase.co")
+    monkeypatch.setenv("SUPABASE_ANON_KEY", "k")
+    saved = []
+    monkeypatch.setattr(_c, "store", lambda row: saved.append(row) or True)
+    msg = "Pay the registration fee today to confirm your job offer now"
+    assert c.post("/api/contribute", json={"text": msg, "label": "scam"}).status_code == 400  # no consent
+    r = c.post("/api/contribute", json={"text": msg, "label": "scam", "consent": True})
+    assert r.status_code == 200 and len(saved) == 1

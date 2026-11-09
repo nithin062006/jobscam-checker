@@ -8,6 +8,7 @@ from pathlib import Path
 
 from flask import Flask, jsonify, render_template, request
 
+import contribute
 import llm
 from checker import analyze
 from forensics import check_domain, valid_host
@@ -21,7 +22,7 @@ CONTACT_EMAIL = "vnaganithin@gmail.com"
 
 # Simple in-memory per-IP rate limiting (resets on restart; fine for one small instance).
 WINDOW_SECONDS = 600
-LIMITS = {"check": 25, "feedback": 40, "forensics": 30, "ai": 8, "telegram": 20}
+LIMITS = {"check": 25, "feedback": 40, "forensics": 30, "ai": 8, "telegram": 20, "contribute": 10}
 _hits = defaultdict(deque)
 
 # Hard daily ceiling on AI calls so a burst of traffic can't run up a bill.
@@ -60,7 +61,7 @@ def ai_budget_left() -> bool:
 
 @app.context_processor
 def inject_globals():
-    return {"contact_email": CONTACT_EMAIL, "ai_provider": llm.provider()}
+    return {"contact_email": CONTACT_EMAIL, "ai_provider": llm.provider(), "contribute_on": contribute.enabled()}
 
 
 @app.get("/")
@@ -143,6 +144,23 @@ def feedback():
     }
     with FEEDBACK_FILE.open("a") as f:
         f.write(json.dumps(entry) + "\n")
+    return jsonify({"ok": True})
+
+
+@app.post("/api/contribute")
+def contribute_route():
+    if not contribute.enabled():
+        return jsonify({"error": "Contributions are not switched on."}), 503
+    if rate_limited("contribute"):
+        return jsonify({"error": "Too many submissions. Try again later."}), 429
+    d = request.get_json(silent=True) or {}
+    if d.get("consent") is not True:
+        return jsonify({"error": "Please confirm you are happy to share this message."}), 400
+    row, err = contribute.prepare(d.get("text", ""), d.get("label", ""), d.get("level", ""), d.get("score"))
+    if err:
+        return jsonify({"error": err}), 400
+    if not contribute.store(row):
+        return jsonify({"error": "Could not save right now. Please try again later."}), 502
     return jsonify({"ok": True})
 
 
