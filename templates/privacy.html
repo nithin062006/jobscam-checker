@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Privacy and Disclaimer – Job Offer Checker{% endblock %}
+{% block description %}What Job Offer Checker collects, what it doesn't, and the limits of its results.{% endblock %}
+
+{% block content %}
+<section class="pagehead"><h1>Privacy &amp; disclaimer</h1></section>
+<div class="card prose">
+  <h2 style="margin-top:0">What happens to the text you paste</h2>
+  <p>The text you paste is sent to our server only to be analysed, and it is not saved. We do not keep the text, the company name you enter, or your results.</p>
+
+  <h2>Screenshots</h2>
+  <p>When you upload a screenshot, the text is read inside your own browser. The image is not uploaded to our server. The first time you use it, your browser downloads an open-source text-recognition library from a public CDN (cdnjs.cloudflare.com).</p>
+
+  <h2>What we do collect</h2>
+  <ul>
+    <li>If you tap "Was this helpful?", we record only yes/no, the risk level shown, and a timestamp. No text or personal details.</li>
+    <li>Our hosting provider (Render) may keep standard server logs, such as IP addresses and request times, as any web host does.</li>
+    <li>If we add visit analytics, it will be a cookie-free, privacy-friendly counter, and this page will be updated.</li>
+  </ul>
+
+  <h2>Limits of the results</h2>
+  <p>This tool uses simple rules to look for common scam patterns. It can miss scams and can flag genuine offers. A "Low" result does not mean an offer is genuine, and a "High" result does not prove it is fake. Results are general information, not legal, financial, or professional advice.</p>
+  <p>Always verify a company through its official website and trusted sources, and never pay money to get a job or share OTPs, PINs, or banking passwords.</p>
+
+  <h2>If you've been scammed</h2>
+  <p>Call 1930 (national cyber crime helpline) right away, report at <a href="https://cybercrime.gov.in" target="_blank" rel="noopener">cybercrime.gov.in</a>, and tell your bank immediately.</p>
+
+  <h2>Contact</h2>
+  <p>Questions, bugs, or scams the tool missed: <a href="mailto:{{ contact_email }}">{{ contact_email }}</a></p>
+</div>
+{% endblock %}

@@ -1,100 +1,96 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Job Offer Checker – Is this job offer fake?</title>
-<meta name="description" content="Paste a job offer, recruiter message, or WhatsApp screenshot and see common scam warning signs, plus links to verify the company. Free, private, no sign-up.">
-<meta property="og:title" content="Job Offer Checker – Is this job offer fake?">
-<meta property="og:description" content="Free tool to spot fake job offers. Paste the message or upload a screenshot. Nothing is stored.">
-<meta property="og:type" content="website">
-<style>
-  :root{--bg:#f6f8fb;--card:#fff;--ink:#14213d;--muted:#5b6b82;--line:#dfe6ef;--brand:#2563eb;--low:#15803d;--med:#b45309;--high:#b91c1c}
-  @media (prefers-color-scheme:dark){:root{--bg:#0f1623;--card:#172033;--ink:#e8eefc;--muted:#9fb0cc;--line:#26324a;--brand:#60a5fa;--low:#4ade80;--med:#fbbf24;--high:#f87171}}
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.55}
-  .wrap{max-width:720px;margin:0 auto;padding:20px 16px 60px}
-  nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;font-size:.95rem}
-  nav a{margin-left:14px}
-  h1{font-size:1.7rem;margin:0 0 6px}
-  .sub{color:var(--muted);margin:0 0 20px}
-  textarea,input[type=text]{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit}
-  textarea{min-height:190px;resize:vertical}
-  input[type=text]{margin-top:10px}
-  button,.filebtn{background:var(--brand);color:#fff;border:0;border-radius:10px;padding:12px 20px;font:inherit;font-weight:600;cursor:pointer;display:inline-block}
-  .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;align-items:center}
-  .filebtn.alt,button.secondary{background:transparent;color:var(--ink);border:1px solid var(--line);padding:10px 14px}
-  input[type=file]{display:none}
-  button:disabled{opacity:.6;cursor:wait}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-top:20px}
-  .level{font-size:1.3rem;font-weight:700}
-  .Low{color:var(--low)}.Medium{color:var(--med)}.High{color:var(--high)}
-  ul{padding-left:18px;margin:8px 0}li{margin-bottom:10px}
-  .adv,.hint{color:var(--muted);font-size:.9rem}
-  .tag{display:inline-block;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:.8rem;margin:2px 4px 2px 0}
-  .err{color:var(--high);margin-top:12px}
-  .note{color:var(--muted);font-size:.85rem;margin-top:24px}
-  .hidden{display:none}
-  a{color:var(--brand)}
-  h3{margin:14px 0 4px;font-size:1.02rem}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <nav><strong>Job Offer Checker</strong><span><a href="/">Check</a><a href="/scams">Common scams</a></span></nav>
-  <h1>Is this job offer fake?</h1>
-  <p class="sub">Paste the message, or upload a screenshot. We check for common scam signs and help you verify the company. Free, no sign-up, nothing is stored.</p>
+{% extends "base.html" %}
+{% block title %}Job Offer Checker – Is this job offer fake?{% endblock %}
+{% block description %}Paste a job offer, recruiter message, or WhatsApp screenshot to see common scam warning signs and verify the company. Free, private, no sign-up.{% endblock %}
 
-  <textarea id="text" placeholder="Paste the full message here..."></textarea>
+{% block content %}
+<section class="hero">
+  <span class="pill"><span class="dot"></span> Free · No sign-up · Nothing stored</span>
+  <h1>Is that job offer <span class="grad">real or a scam?</span></h1>
+  <p class="lead">Paste the message or upload a screenshot. Get a risk check in seconds, with the exact warning signs and links to verify the company.</p>
+</section>
+
+<section class="panel">
+  <textarea id="text" placeholder="Paste the full job offer, recruiter message, or email here..."></textarea>
   <input type="text" id="company" maxlength="80" placeholder="Company name (optional, we try to detect it)">
   <div class="row">
-    <button id="go">Check this offer</button>
-    <label class="filebtn alt" for="shot">📷 Upload screenshot</label>
+    <button class="btn primary" id="go">Check this offer</button>
+    <label class="btn ghost" for="shot">📷 Upload screenshot</label>
     <input type="file" id="shot" accept="image/*">
   </div>
-  <div id="ocrstatus" class="hint hidden"></div>
+  <div id="ocrstatus" class="hint hidden" style="margin-top:10px"></div>
   <div id="err" class="err hidden"></div>
+</section>
 
-  <div id="result" class="card hidden">
-    <div>Risk level: <span id="level" class="level"></span> <span id="score" class="adv"></span></div>
-    <div id="types"></div>
-    <p id="summary"></p>
-    <h3>Warning signs found</h3>
-    <ul id="flags"></ul>
-    <div id="noflags" class="adv hidden">No specific warning signs matched.</div>
-    <h3>What to do next</h3>
-    <ul id="steps"></ul>
-    <h3>Verify the company</h3>
-    <div id="vinfo" class="adv"></div>
-    <ul id="links"></ul>
-    <div class="row">
-      <button class="secondary" id="share">Share this warning</button>
+<section id="result" class="result hidden">
+  <div id="banner" class="banner">
+    <div class="gauge">
+      <svg viewBox="0 0 120 70" aria-hidden="true">
+        <path class="track" d="M10 62 A50 50 0 0 1 110 62" fill="none" stroke-width="11" stroke-linecap="round"/>
+        <path id="arc" class="arc" d="M10 62 A50 50 0 0 1 110 62" fill="none" stroke-width="11" stroke-linecap="round" stroke-dasharray="157" stroke-dashoffset="157"/>
+      </svg>
+      <div class="num"><span id="scorenum">0</span><small>RISK SCORE</small></div>
+    </div>
+    <div>
+      <div class="hint">Risk level</div>
+      <div id="level" class="lvl"></div>
+      <p id="summary" class="sum"></p>
+      <div id="types" class="tags"></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h3>⚠️ Warning signs found</h3>
+    <div id="flags"></div>
+    <div id="noflags" class="hint hidden">No specific warning signs matched.</div>
+  </div>
+  <div class="sec">
+    <h3>✅ What to do next</h3>
+    <ol id="steps" class="steps"></ol>
+  </div>
+  <div class="sec">
+    <h3>🔎 Verify the company</h3>
+    <div id="vinfo" class="hint"></div>
+    <div id="links" class="chips"></div>
+  </div>
+  <div class="sec">
+    <div class="row" style="margin-top:0">
+      <button class="btn ghost" id="share">Share this warning</button>
       <span id="sharemsg" class="hint"></span>
     </div>
-    <div id="fb" style="margin-top:14px">
-      <span class="adv">Was this helpful?</span><br>
-      <button class="secondary" data-v="1">Yes</button> <button class="secondary" data-v="0">No</button>
+    <div id="fb" style="margin-top:16px">
+      <span class="hint">Was this helpful?</span>
+      <div class="row" style="margin-top:6px"><button class="btn ghost" data-v="1">👍 Yes</button><button class="btn ghost" data-v="0">👎 No</button></div>
     </div>
-    <div id="fbthanks" class="adv hidden">Thanks for the feedback.</div>
+    <div id="fbthanks" class="hint hidden" style="margin-top:12px">Thanks for the feedback.</div>
   </div>
+</section>
 
-  <div class="card">
-    <strong>If you think you've been scammed</strong>
-    <ul>
-      <li>Call the cyber crime helpline <strong>1930</strong> right away if money was lost.</li>
-      <li>Report at <a href="https://cybercrime.gov.in" target="_blank" rel="noopener">cybercrime.gov.in</a>.</li>
-      <li>Tell your bank immediately to try to block the transaction.</li>
-    </ul>
-  </div>
+<section class="how">
+  <div class="c"><div class="n">1</div><h3>Paste or upload</h3><p>Drop in the message text, or upload a WhatsApp or email screenshot.</p></div>
+  <div class="c"><div class="n">2</div><h3>See the red flags</h3><p>We look for fee demands, WhatsApp-only contact, fake-domain emails and other known tricks.</p></div>
+  <div class="c"><div class="n">3</div><h3>Verify and act</h3><p>Get one-click links to check the company and clear next steps.</p></div>
+</section>
 
-  <p class="note">This tool uses simple rules and can be wrong. A low score doesn't mean an offer is genuine, and a high score doesn't prove it's fake. Always verify the company on its official website and never pay to get a job. Screenshot text is read inside your browser, and images are not uploaded.</p>
-</div>
+<p class="stat">An Indeed survey of 1,161 Indian job seekers found <b>93%</b> had seen suspicious job offers, and <b>51%</b> couldn't tell a real recruiter from a scammer.</p>
 
+<section class="help">
+  <h3>If you think you've been scammed</h3>
+  <ul>
+    <li>Call the cyber crime helpline <strong>1930</strong> right away if money was lost.</li>
+    <li>Report at <a href="https://cybercrime.gov.in" target="_blank" rel="noopener">cybercrime.gov.in</a>.</li>
+    <li>Tell your bank immediately to try to block the transaction.</li>
+  </ul>
+</section>
+
+<p class="note">This tool uses simple rules and can be wrong. A low score doesn't mean an offer is genuine, and a high score doesn't prove it's fake. Always verify the company on its official website and never pay to get a job. Screenshot text is read inside your browser, and images are not uploaded.</p>
+{% endblock %}
+
+{% block scripts %}
 <script>
 const $ = id => document.getElementById(id);
 let last = null;
 
-function fill(ul, items, render){ ul.innerHTML = ""; items.forEach(i => { const li = document.createElement("li"); render(li, i); ul.appendChild(li); }); }
+function el(tag, cls, text){ const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
 
 $("go").addEventListener("click", async () => {
   $("err").classList.add("hidden"); $("result").classList.add("hidden");
@@ -106,21 +102,32 @@ $("go").addEventListener("click", async () => {
     const d = await r.json();
     if (d.error) { $("err").textContent = d.error; $("err").classList.remove("hidden"); return; }
     last = d;
-    $("level").textContent = d.level; $("level").className = "level " + d.level;
-    $("score").textContent = "(score " + d.score + "/100)";
+
+    $("banner").className = "banner " + d.level;
+    $("level").textContent = d.level + " risk";
     $("summary").textContent = d.summary;
-    $("types").innerHTML = "";
-    d.types.forEach(t => { const s = document.createElement("span"); s.className = "tag"; s.textContent = t; $("types").appendChild(s); });
-    fill($("flags"), d.flags, (li, f) => {
-      const a = document.createElement("div"); a.textContent = f.reason;
-      const b = document.createElement("div"); b.className = "adv"; b.textContent = f.advice; li.append(a, b); });
+    $("types").innerHTML = ""; d.types.forEach(t => $("types").appendChild(el("span", "tag", t)));
+
+    $("flags").innerHTML = "";
+    d.flags.forEach(f => { const box = el("div", "flag"); box.append(el("b", "", f.reason), el("span", "", f.advice)); $("flags").appendChild(box); });
     $("noflags").classList.toggle("hidden", d.flags.length > 0);
-    fill($("steps"), d.steps, (li, s) => { li.textContent = s; });
+
+    $("steps").innerHTML = ""; d.steps.forEach(s => $("steps").appendChild(el("li", "", s)));
+
     const v = d.verify;
-    $("vinfo").textContent = v.company ? ("Company detected: " + v.company + (v.domain ? " · email domain: " + v.domain : "") + ". Edit the company name above if this is wrong.")
-                                      : "We couldn't detect a company name. Enter it above for tailored links.";
-    fill($("links"), v.links, (li, l) => { const a = document.createElement("a"); a.href = l.url; a.textContent = l.label; a.target = "_blank"; a.rel = "noopener"; li.appendChild(a); });
+    $("vinfo").textContent = v.company
+      ? "Company detected: " + v.company + (v.domain ? " · email domain: " + v.domain : "") + ". Edit the company name above if this is wrong."
+      : "We couldn't detect a company name. Enter it above for tailored links.";
+    $("links").innerHTML = "";
+    v.links.forEach(l => { const a = el("a", "chip", l.label + " ↗"); a.href = l.url; a.target = "_blank"; a.rel = "noopener"; $("links").appendChild(a); });
+
     $("result").classList.remove("hidden");
+    // animate the gauge and the number
+    const arc = $("arc"); arc.style.strokeDashoffset = 157;
+    requestAnimationFrame(() => requestAnimationFrame(() => { arc.style.strokeDashoffset = 157 * (1 - d.score / 100); }));
+    let n = 0; const target = d.score; const step = Math.max(1, Math.round(target / 30));
+    const t = setInterval(() => { n = Math.min(target, n + step); $("scorenum").textContent = n; if (n >= target) clearInterval(t); }, 22);
+    $("result").scrollIntoView({behavior: "smooth", block: "start"});
   } catch (e) {
     $("err").textContent = "Something went wrong. Please try again."; $("err").classList.remove("hidden");
   } finally { btn.disabled = false; btn.textContent = "Check this offer"; }
@@ -158,5 +165,4 @@ $("shot").addEventListener("change", async e => {
   e.target.value = "";
 });
 </script>
-</body>
-</html>
+{% endblock %}
