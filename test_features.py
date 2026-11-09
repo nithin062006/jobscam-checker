@@ -239,3 +239,9 @@ def test_guides_sitemap_robots():
     assert all(s in sm for s in GUIDES) and "/scams" in sm
     assert "Sitemap:" in c.get("/robots.txt").text
     assert c.get("/scams").status_code == 200
+
+
+def test_google_verification_file():
+    import app as appmod
+    r = appmod.app.test_client().get("/googlec66a0bfb5bc18d3d.html")
+    assert r.status_code == 200 and r.text == "google-site-verification: googlec66a0bfb5bc18d3d.html"

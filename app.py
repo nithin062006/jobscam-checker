@@ -173,6 +173,11 @@ def guide(slug):
     return render_template("guide.html", g=g, slug=slug, guides=GUIDES)
 
 
+@app.get("/googlec66a0bfb5bc18d3d.html")
+def google_verify():
+    return Response("google-site-verification: googlec66a0bfb5bc18d3d.html", mimetype="text/html")
+
+
 @app.get("/robots.txt")
 def robots():
     return Response("User-agent: *\nAllow: /\nDisallow: /api/\nSitemap: " + request.url_root.rstrip("/") + "/sitemap.xml\n", mimetype="text/plain")
