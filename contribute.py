@@ -49,9 +49,10 @@ def store(row: dict) -> bool:
     url = os.environ["SUPABASE_URL"].rstrip("/") + "/rest/v1/contributions"
     key = os.environ["SUPABASE_ANON_KEY"]
     try:
-        r = requests.post(url, json=row, timeout=8, headers={
-            "apikey": key, "Authorization": f"Bearer {key}",
-            "Content-Type": "application/json", "Prefer": "return=minimal"})
+        headers = {"apikey": key, "Content-Type": "application/json", "Prefer": "return=minimal"}
+        if key.startswith("eyJ"):  # legacy anon keys are JWTs; new sb_publishable_ keys are not
+            headers["Authorization"] = f"Bearer {key}"
+        r = requests.post(url, json=row, timeout=8, headers=headers)
     except requests.RequestException:
         return False
     return r.status_code in (200, 201, 204, 409)  # 409 = duplicate hash, already have it
