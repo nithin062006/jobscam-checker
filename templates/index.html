@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Job Offer Checker</title>
+<meta name="description" content="Paste a job offer or recruiter message and see common scam warning signs. Free, private, no sign-up.">
+<style>
+  :root{--bg:#f6f8fb;--card:#fff;--ink:#14213d;--muted:#5b6b82;--line:#dfe6ef;--brand:#2563eb;--low:#15803d;--med:#b45309;--high:#b91c1c}
+  @media (prefers-color-scheme:dark){:root{--bg:#0f1623;--card:#172033;--ink:#e8eefc;--muted:#9fb0cc;--line:#26324a;--brand:#60a5fa;--low:#4ade80;--med:#fbbf24;--high:#f87171}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.55}
+  .wrap{max-width:720px;margin:0 auto;padding:28px 16px 60px}
+  h1{font-size:1.7rem;margin:0 0 6px}
+  .sub{color:var(--muted);margin:0 0 20px}
+  textarea{width:100%;min-height:200px;padding:14px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;resize:vertical}
+  button{background:var(--brand);color:#fff;border:0;border-radius:10px;padding:12px 20px;font:inherit;font-weight:600;cursor:pointer;margin-top:12px}
+  button.secondary{background:transparent;color:var(--ink);border:1px solid var(--line);padding:8px 14px;margin-right:8px}
+  button:disabled{opacity:.6;cursor:wait}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-top:20px}
+  .level{font-size:1.3rem;font-weight:700}
+  .Low{color:var(--low)}.Medium{color:var(--med)}.High{color:var(--high)}
+  ul{padding-left:18px}li{margin-bottom:10px}
+  .adv{color:var(--muted);font-size:.92rem}
+  .err{color:var(--high);margin-top:12px}
+  .note{color:var(--muted);font-size:.85rem;margin-top:24px}
+  .hidden{display:none}
+  a{color:var(--brand)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Job Offer Checker</h1>
+  <p class="sub">Paste a job offer, recruiter message, or email. We check it for common scam warning signs. Free, no sign-up, and your text is not stored.</p>
+
+  <textarea id="text" placeholder="Paste the full message here..."></textarea>
+  <button id="go">Check this offer</button>
+  <div id="err" class="err hidden"></div>
+
+  <div id="result" class="card hidden">
+    <div>Risk level: <span id="level" class="level"></span> <span id="score" class="adv"></span></div>
+    <p id="summary"></p>
+    <ul id="flags"></ul>
+    <div id="fb">
+      <span class="adv">Was this helpful?</span><br>
+      <button class="secondary" data-v="1">Yes</button><button class="secondary" data-v="0">No</button>
+    </div>
+    <div id="fbthanks" class="adv hidden">Thanks for the feedback.</div>
+  </div>
+
+  <div class="card">
+    <strong>If you think you've been scammed</strong>
+    <ul>
+      <li>Call the cyber crime helpline <strong>1930</strong> right away if money was lost.</li>
+      <li>Report at <a href="https://cybercrime.gov.in" target="_blank" rel="noopener">cybercrime.gov.in</a>.</li>
+      <li>Tell your bank immediately to try to block the transaction.</li>
+    </ul>
+  </div>
+
+  <p class="note">This tool uses simple rules and can be wrong. A low score doesn't mean an offer is genuine, and a high score doesn't prove it's fake. Always verify the company on its official website and never pay to get a job.</p>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let lastLevel = "";
+
+$("go").addEventListener("click", async () => {
+  $("err").classList.add("hidden");
+  $("result").classList.add("hidden");
+  $("fb").classList.remove("hidden");
+  $("fbthanks").classList.add("hidden");
+  const btn = $("go"); btn.disabled = true; btn.textContent = "Checking...";
+  try {
+    const r = await fetch("/api/check", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({text: $("text").value})});
+    const d = await r.json();
+    if (d.error) { $("err").textContent = d.error; $("err").classList.remove("hidden"); return; }
+    lastLevel = d.level;
+    $("level").textContent = d.level; $("level").className = "level " + d.level;
+    $("score").textContent = "(score " + d.score + "/100)";
+    $("summary").textContent = d.summary;
+    const ul = $("flags"); ul.innerHTML = "";
+    d.flags.forEach(f => {
+      const li = document.createElement("li");
+      const a = document.createElement("div"); a.textContent = f.reason;
+      const b = document.createElement("div"); b.className = "adv"; b.textContent = f.advice;
+      li.appendChild(a); li.appendChild(b); ul.appendChild(li);
+    });
+    $("result").classList.remove("hidden");
+  } catch (e) {
+    $("err").textContent = "Something went wrong. Please try again."; $("err").classList.remove("hidden");
+  } finally { btn.disabled = false; btn.textContent = "Check this offer"; }
+});
+
+document.querySelectorAll("#fb button").forEach(b => b.addEventListener("click", async () => {
+  try { await fetch("/api/feedback", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({helpful: b.dataset.v === "1", level: lastLevel})}); } catch(e) {}
+  $("fb").classList.add("hidden"); $("fbthanks").classList.remove("hidden");
+}));
+</script>
+</body>
+</html>
