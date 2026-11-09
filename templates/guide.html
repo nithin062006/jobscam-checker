@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ g.title }}{% endblock %}
+{% block description %}{{ g.description }}{% endblock %}
+{% block content %}
+<div class="page">
+  <p class="kicker">Field guide</p>
+  <h1 style="font-size:clamp(2rem,5vw,3.2rem)">{{ g.title }}</h1>
+  <p class="lead">{{ g.short }}</p>
+  <div class="prose">
+    {% for h, paras in g.sections %}
+    <h2>{{ h }}</h2>
+    {% for p in paras %}<p>{{ p }}</p>{% endfor %}
+    {% endfor %}
+  </div>
+  <p style="margin-top:34px"><a class="btn" href="/" style="text-decoration:none;display:inline-block">Check your message &rarr;</a></p>
+  <div class="help">
+    <h3>If you've been scammed</h3>
+    <ul><li>Call <strong>1930</strong> (national cyber crime helpline) immediately if money was lost.</li>
+    <li>Report at <a href="https://cybercrime.gov.in" target="_blank" rel="noopener">cybercrime.gov.in</a> and tell your bank at once.</li></ul>
+  </div>
+  <h3 style="margin-top:40px">Related</h3>
+  <ul>{% for r in g.related %}<li><a href="/guide/{{ r }}">{{ guides[r].title }}</a></li>{% endfor %}</ul>
+</div>
+<script type="application/ld+json">{{ {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":g.question,"acceptedAnswer":{"@type":"Answer","text":g.short}}]}|tojson }}</script>
+{% endblock %}

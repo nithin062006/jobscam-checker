@@ -223,3 +223,19 @@ def test_contribute_endpoint(monkeypatch):
     assert c.post("/api/contribute", json={"text": msg, "label": "scam"}).status_code == 400  # no consent
     r = c.post("/api/contribute", json={"text": msg, "label": "scam", "consent": True})
     assert r.status_code == 200 and len(saved) == 1
+
+
+def test_guides_sitemap_robots():
+    import app as appmod
+    from guides import GUIDES
+    c = appmod.app.test_client()
+    for slug in GUIDES:
+        r = c.get("/guide/" + slug)
+        assert r.status_code == 200 and "FAQPage" in r.text
+        for rel in GUIDES[slug]["related"]:
+            assert rel in GUIDES
+    assert c.get("/guide/nope").status_code == 404
+    sm = c.get("/sitemap.xml").text
+    assert all(s in sm for s in GUIDES) and "/scams" in sm
+    assert "Sitemap:" in c.get("/robots.txt").text
+    assert c.get("/scams").status_code == 200

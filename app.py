@@ -6,9 +6,10 @@ import time
 from collections import defaultdict, deque
 from pathlib import Path
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, Response, abort, jsonify, render_template, request
 
 import contribute
+from guides import GUIDES
 import llm
 from checker import analyze
 from forensics import check_domain, valid_host
@@ -71,7 +72,7 @@ def index():
 
 @app.get("/scams")
 def scams():
-    return render_template("scams.html")
+    return render_template("scams.html", guides=GUIDES)
 
 
 @app.get("/privacy")
@@ -162,6 +163,27 @@ def contribute_route():
     if not contribute.store(row):
         return jsonify({"error": "Could not save right now. Please try again later."}), 502
     return jsonify({"ok": True})
+
+
+@app.get("/guide/<slug>")
+def guide(slug):
+    g = GUIDES.get(slug)
+    if not g:
+        abort(404)
+    return render_template("guide.html", g=g, slug=slug, guides=GUIDES)
+
+
+@app.get("/robots.txt")
+def robots():
+    return Response("User-agent: *\nAllow: /\nDisallow: /api/\nSitemap: " + request.url_root.rstrip("/") + "/sitemap.xml\n", mimetype="text/plain")
+
+
+@app.get("/sitemap.xml")
+def sitemap():
+    base = request.url_root.rstrip("/")
+    paths = ["/", "/scams", "/privacy"] + ["/guide/" + s for s in GUIDES]
+    body = "".join(f"<url><loc>{base}{p}</loc></url>" for p in paths)
+    return Response('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + body + "</urlset>", mimetype="application/xml")
 
 
 @app.get("/healthz")
