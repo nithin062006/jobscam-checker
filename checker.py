@@ -11,7 +11,7 @@ SHORTENERS = ("bit.ly", "tinyurl.com", "t.co", "cutt.ly", "rb.gy", "goo.gl", "is
 
 # (id, weight, regex, reason, advice)
 RULES = [
-    ("fee", 40,
+    ("fee", 62,
      r"(registration|processing|security|refundable|training|kit|laptop|onboarding|verification|interview|document|joining)\s*(fee|fees|charge|charges|deposit|amount)\b|pay\s+(rs\.?|₹|inr)\s*[\d,]+|(rs\.?|₹)\s*[\d,]+\s*(as|for)\s+(registration|security|processing|training|kit)",
      "Asks you to pay money (fee/deposit/kit) to get the job.",
      "Real employers do not charge candidates. Do not pay."),
@@ -307,6 +307,6 @@ def guidance(ids: set, level: str):
                 if t not in steps:
                     steps.append(t)
     if not steps:
-        steps = ["Verify the company and the recruiter using the links below before sharing documents.",
+        steps = ["Verify the company and the recruiter on its official website and LinkedIn before sharing documents.",
                  "Never pay money to get a job, and never share OTPs or PINs."]
     return types, steps[:6]
