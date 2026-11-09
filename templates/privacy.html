@@ -3,9 +3,11 @@
 {% block description %}What Job Offer Checker collects, what it doesn't, and the limits of its results.{% endblock %}
 
 {% block content %}
-<section class="pagehead"><h1>Privacy &amp; disclaimer</h1></section>
-<div class="card prose">
-  <h2 style="margin-top:0">What happens to the text you paste</h2>
+<div class="page">
+  <p class="kicker">The small print</p>
+  <h1>Privacy &amp; <em>disclaimer</em></h1>
+<div class="prose">
+  <h2 style="margin-top:30px">What happens to the text you paste</h2>
   <p>The text you paste is sent to our server only to be analysed, and it is not saved. We do not keep the text, the company name you enter, or your results.</p>
 
   <h2>Optional AI analysis</h2>
@@ -36,5 +38,6 @@
 
   <h2>Contact</h2>
   <p>Questions, bugs, or scams the tool missed: <a href="mailto:{{ contact_email }}">{{ contact_email }}</a></p>
+</div>
 </div>
 {% endblock %}

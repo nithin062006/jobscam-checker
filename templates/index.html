@@ -4,109 +4,125 @@
 
 {% block content %}
 <section class="hero">
-  <span class="pill"><span class="dot"></span> Free · No sign-up · Nothing stored</span>
-  <h1>Is that job offer <span class="grad">real or a scam?</span></h1>
-  <p class="lead">Paste the message or upload a screenshot. Get a risk check in seconds, with the exact warning signs and links to verify the company.</p>
-</section>
-
-<section class="panel">
-  <textarea id="text" placeholder="Paste the full job offer, recruiter message, or email here..."></textarea>
-  <input type="text" id="company" maxlength="80" placeholder="Company name (optional, we try to detect it)">
-  {% if ai_provider %}
-  <label class="hint" style="display:flex;gap:8px;align-items:flex-start;margin-top:12px;cursor:pointer">
-    <input type="checkbox" id="useai" style="margin-top:4px">
-    <span>Also get an <b>AI analysis</b>. This sends your text to an outside AI provider ({{ ai_provider|capitalize }}) to read it. Off by default; otherwise your text never leaves our server. <a href="/privacy">Details</a></span>
-  </label>
-  {% endif %}
-  <div class="row">
-    <button class="btn primary" id="go">Check this offer</button>
-    <label class="btn ghost" for="shot">📷 Upload screenshot</label>
-    <input type="file" id="shot" accept="image/*">
+  <div>
+    <p class="kicker">Free · No sign-up · Nothing stored</p>
+    <h1>Is that job offer <em>real?</em></h1>
+    <p class="lead">Paste the message you were sent. We read it the way a fraud investigator would, then show you exactly what looks wrong and how to check the company yourself.</p>
+    <ol class="ledger" style="margin-top:28px">
+      <li><b>01</b><div>Paste or upload<br><span>The message, email, or a screenshot of the chat.</span></div></li>
+      <li><b>02</b><div>We mark the evidence<br><span>Fee demands, look-alike domains, pressure tactics.</span></div></li>
+      <li><b>03</b><div>You decide<br><span>With links to verify the company and what to do next.</span></div></li>
+    </ol>
   </div>
-  <div id="ocrstatus" class="hint hidden" style="margin-top:10px"></div>
-  <div id="err" class="err hidden"></div>
+
+  <div class="sheet">
+    <h2>Exhibit A &mdash; the message</h2>
+    <textarea id="text" placeholder="Paste the full offer, recruiter message or email here…"></textarea>
+    <div class="field">
+      <div class="label">Company, if you know it</div>
+      <input type="text" id="company" maxlength="80" placeholder="We'll try to detect it otherwise">
+    </div>
+    {% if ai_provider %}
+    <label class="opt">
+      <input type="checkbox" id="useai">
+      <span>Also get an <b style="color:var(--ink)">AI second opinion</b>. This sends your text to an outside provider ({{ ai_provider|capitalize }}). Off by default; otherwise your text never leaves our server. <a href="/privacy">Details</a></span>
+    </label>
+    {% endif %}
+    <div class="row">
+      <button class="btn" id="go">Run the check &rarr;</button>
+      <label class="linkbtn" for="shot">Upload a screenshot</label>
+      <input type="file" id="shot" accept="image/*">
+    </div>
+    <div id="ocrstatus" class="hint hidden" style="margin-top:12px"></div>
+    <div id="err" class="err hidden"></div>
+  </div>
 </section>
 
 <section id="result" class="result hidden">
-  <div id="banner" class="banner">
-    <div class="gauge">
-      <svg viewBox="0 0 120 70" aria-hidden="true">
-        <path class="track" d="M10 62 A50 50 0 0 1 110 62" fill="none" stroke-width="11" stroke-linecap="round"/>
-        <path id="arc" class="arc" d="M10 62 A50 50 0 0 1 110 62" fill="none" stroke-width="11" stroke-linecap="round" stroke-dasharray="157" stroke-dashoffset="157"/>
-      </svg>
-      <div class="num"><span id="scorenum">0</span><small>RISK SCORE</small></div>
-    </div>
+  <div class="verdict" id="verdict">
+    <div class="stamp" id="stamp"><span id="stamptext"></span><small>Verdict</small></div>
     <div>
-      <div class="hint">Risk level</div>
-      <div id="level" class="lvl"></div>
-      <p id="summary" class="sum"></p>
-      <div id="types" class="tags"></div>
+      <p class="say" id="summary"></p>
+      <div class="meter" id="meter" aria-hidden="true"></div>
+      <div class="meterlab">Risk score <span id="scorenum">0</span> / 100</div>
+      <div class="types" id="types"></div>
     </div>
   </div>
 
-  <div class="sec">
-    <h3>⚠️ Warning signs found</h3>
+  <div class="block">
+    <h3>The evidence <span class="label" id="evcount"></span></h3><hr>
     <div id="flags"></div>
-    <div id="noflags" class="hint hidden">No specific warning signs matched.</div>
+    <p id="noflags" class="hint hidden">No specific warning signs matched. That doesn't mean the offer is genuine.</p>
   </div>
-  <div class="sec">
-    <h3>✅ What to do next</h3>
-    <ol id="steps" class="steps"></ol>
+
+  <div class="block">
+    <h3>What to do next</h3><hr>
+    <ul id="steps" class="todo"></ul>
   </div>
-  <div class="sec">
-    <h3>🔎 Verify the company</h3>
-    <div id="vinfo" class="hint"></div>
-    <div id="links" class="chips"></div>
+
+  <div class="block">
+    <h3>Check the company yourself</h3><hr>
+    <p id="vinfo" class="hint" style="margin:8px 0 0"></p>
+    <ul id="links" class="links"></ul>
   </div>
-  <div class="sec hidden" id="domaincard">
-    <h3>🌐 Domain check</h3>
+
+  <div class="block hidden" id="domaincard">
+    <h3>Domain check</h3><hr>
     <div id="domainout"></div>
   </div>
-  <div class="sec hidden" id="aicard">
-    <h3>🤖 AI analysis <span class="tag">AI-generated, can be wrong</span></h3>
-    <div id="aiout" class="hint">Analysing…</div>
+
+  <div class="block hidden" id="aicard">
+    <h3>AI second opinion <span class="ai-tag">AI-generated, can be wrong</span></h3><hr>
+    <div id="aiout" class="hint" style="margin-top:10px">Reading…</div>
   </div>
-  <div class="sec">
-    <div class="row" style="margin-top:0">
-      <button class="btn ghost" id="share">Share this warning</button>
-      <span id="sharemsg" class="hint"></span>
-    </div>
-    <div id="fb" style="margin-top:16px">
-      <span class="hint">Was this helpful?</span>
-      <div class="row" style="margin-top:6px"><button class="btn ghost" data-v="1">👍 Yes</button><button class="btn ghost" data-v="0">👎 No</button></div>
-    </div>
-    <div id="fbthanks" class="hint hidden" style="margin-top:12px">Thanks for the feedback.</div>
+
+  <div class="footrow">
+    <button class="linkbtn" id="share">Share this warning</button>
+    <span id="sharemsg" class="hint"></span>
+    <span id="fb"><span class="hint">Was this useful?</span>
+      <button class="linkbtn" data-v="1" style="margin-left:10px">Yes</button>
+      <button class="linkbtn" data-v="0" style="margin-left:10px">No</button></span>
+    <span id="fbthanks" class="hint hidden">Thanks, noted.</span>
   </div>
 </section>
 
-<section class="how">
-  <div class="c"><div class="n">1</div><h3>Paste or upload</h3><p>Drop in the message text, or upload a WhatsApp or email screenshot.</p></div>
-  <div class="c"><div class="n">2</div><h3>See the red flags</h3><p>We look for fee demands, WhatsApp-only contact, fake-domain emails and other known tricks.</p></div>
-  <div class="c"><div class="n">3</div><h3>Verify and act</h3><p>Get one-click links to check the company and clear next steps.</p></div>
+<section class="pull">
+  <div class="big">93%</div>
+  <div>
+    <p>of Indian job seekers have seen a suspicious job offer, and half couldn't tell a real recruiter from a scammer.</p>
+    <cite>Indeed survey &middot; 1,161 respondents</cite>
+  </div>
 </section>
-
-<p class="stat">An Indeed survey of 1,161 Indian job seekers found <b>93%</b> had seen suspicious job offers, and <b>51%</b> couldn't tell a real recruiter from a scammer.</p>
 
 <section class="help">
-  <h3>If you think you've been scammed</h3>
+  <h3>If money has already left your account</h3>
   <ul>
-    <li>Call the cyber crime helpline <strong>1930</strong> right away if money was lost.</li>
+    <li>Call the cyber crime helpline <strong>1930</strong> right away.</li>
     <li>Report at <a href="https://cybercrime.gov.in" target="_blank" rel="noopener">cybercrime.gov.in</a>.</li>
-    <li>Tell your bank immediately to try to block the transaction.</li>
+    <li>Tell your bank immediately and ask them to try to block the transaction.</li>
   </ul>
 </section>
 
-<p class="note">This tool uses simple rules and can be wrong. A low score doesn't mean an offer is genuine, and a high score doesn't prove it's fake. Always verify the company on its official website and never pay to get a job. Screenshot text is read inside your browser, and images are not uploaded.</p>
+<p class="note">This tool uses rules and can be wrong. A low score doesn't mean an offer is genuine, and a high score doesn't prove it's fake. Always verify the company on its official website and never pay to get a job. Screenshot text is read inside your browser, and images are not uploaded.</p>
 {% endblock %}
 
 {% block scripts %}
 <script>
 const $ = id => document.getElementById(id);
 let last = null;
+const STAMP = {Low: "Low risk", Medium: "Medium risk", High: "High risk"};
+const VERDICT = {likely_scam: "Likely a scam", suspicious: "Suspicious", likely_genuine: "Looks like a normal message", unclear: "Unclear"};
+const TICKS = 20;
 
 function el(tag, cls, text){ const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
 
-const VERDICT = {likely_scam: "Likely a scam", suspicious: "Suspicious", likely_genuine: "Looks like a normal message", unclear: "Unclear"};
+function buildMeter(){ const m = $("meter"); m.innerHTML = ""; for (let i = 0; i < TICKS; i++) { const s = document.createElement("span"); s.style.height = (38 + (i / TICKS) * 62) + "%"; m.appendChild(s); } }
+function fillMeter(score){
+  const ticks = [...$("meter").children], on = Math.round(score / 100 * TICKS);
+  ticks.forEach((t, i) => { t.classList.remove("on"); if (i < on) setTimeout(() => t.classList.add("on"), 40 * i + 250); });
+  let n = 0; const step = Math.max(1, Math.round(score / 25));
+  const iv = setInterval(() => { n = Math.min(score, n + step); $("scorenum").textContent = n; if (n >= score) clearInterval(iv); }, 30);
+}
 
 async function runExtras(d, text) {
   const dc = $("domaincard"), ac = $("aicard");
@@ -116,36 +132,35 @@ async function runExtras(d, text) {
     try {
       const r = await fetch("/api/forensics", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({domains: hosts})});
       const j = await r.json(); const out = $("domainout"); out.innerHTML = "";
-      (j.results || []).forEach(x => {
-        const box = el("div", "flag");
-        box.append(el("b", "", x.domain + (x.registered ? " · registered " + x.registered : "")), el("span", "", x.note));
-        if (x.verdict === "established") box.style.borderLeftColor = "var(--low)";
-        else if (x.verdict === "unknown") box.style.borderLeftColor = "var(--muted)";
-        out.appendChild(box);
+      (j.results || []).forEach((x, i) => {
+        const box = el("div", "ev");
+        box.append(el("div", "n", String(i + 1).padStart(2, "0")));
+        const body = el("div"); body.append(el("b", "", x.domain + (x.registered ? "  ·  registered " + x.registered : "")), el("span", "", x.note));
+        box.append(body); out.appendChild(box);
       });
       if ((j.results || []).length) dc.classList.remove("hidden");
-    } catch (e) { /* the domain check is optional */ }
+    } catch (e) { /* optional */ }
   }
   const cb = $("useai");
   if (cb && cb.checked) {
-    ac.classList.remove("hidden"); $("aiout").textContent = "Analysing…";
+    ac.classList.remove("hidden"); $("aiout").textContent = "Reading…";
     try {
       const r = await fetch("/api/ai", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({text})});
       const j = await r.json(); const out = $("aiout"); out.innerHTML = "";
       if (j.error) { out.textContent = j.error; return; }
-      out.append(el("div", "lvl", VERDICT[j.verdict] || "Unclear"));
-      out.append(el("div", "hint", "Confidence " + Math.round(j.confidence * 100) + "%" + (j.scam_type && j.scam_type !== "none" ? " · " + j.scam_type : "")));
+      out.className = "";
+      out.append(el("p", "say", (VERDICT[j.verdict] || "Unclear") + " · " + Math.round(j.confidence * 100) + "% confident" + (j.scam_type && j.scam_type !== "none" ? " · " + j.scam_type : "")));
       if (j.explanation) out.append(el("p", "", j.explanation));
-      if (j.tactics.length) { const t = el("div", "tags"); j.tactics.forEach(x => t.appendChild(el("span", "tag", x))); out.append(t); }
-      if (j.what_to_check.length) { const ul = el("ul"); j.what_to_check.forEach(x => ul.appendChild(el("li", "", x))); out.append(el("h3", "", "Worth checking"), ul); }
-    } catch (e) { $("aiout").textContent = "The AI analysis is unavailable right now."; }
+      if (j.tactics.length) { const t = el("div", "tagrow"); j.tactics.forEach(x => t.appendChild(el("span", "", x))); out.append(t); }
+      if (j.what_to_check.length) { const ul = el("ul", "todo"); j.what_to_check.forEach(x => ul.appendChild(el("li", "", x))); out.append(ul); }
+    } catch (e) { $("aiout").textContent = "The AI second opinion is unavailable right now."; }
   }
 }
 
 $("go").addEventListener("click", async () => {
   $("err").classList.add("hidden"); $("result").classList.add("hidden");
   $("fb").classList.remove("hidden"); $("fbthanks").classList.add("hidden"); $("sharemsg").textContent = "";
-  const btn = $("go"); btn.disabled = true; btn.textContent = "Checking...";
+  const btn = $("go"); btn.disabled = true; btn.textContent = "Reading…";
   try {
     const r = await fetch("/api/check", {method:"POST", headers:{"Content-Type":"application/json"},
       body: JSON.stringify({text: $("text").value, company: $("company").value})});
@@ -153,35 +168,38 @@ $("go").addEventListener("click", async () => {
     if (d.error) { $("err").textContent = d.error; $("err").classList.remove("hidden"); return; }
     last = d;
 
-    $("banner").className = "banner " + d.level;
-    $("level").textContent = d.level + " risk";
+    $("verdict").className = "verdict " + d.level;
+    $("stamp").style.animation = "none"; void $("stamp").offsetWidth; $("stamp").style.animation = "";
+    $("stamptext").textContent = STAMP[d.level];
     $("summary").textContent = d.summary;
-    $("types").innerHTML = ""; d.types.forEach(t => $("types").appendChild(el("span", "tag", t)));
+    buildMeter();
+    $("types").innerHTML = "";
+    if (d.types.length) { $("types").append("Pattern: "); d.types.forEach((t, i) => { $("types").append(el("b", "", t)); if (i < d.types.length - 1) $("types").append(" · "); }); }
 
     $("flags").innerHTML = "";
-    d.flags.forEach(f => { const box = el("div", "flag"); box.append(el("b", "", f.reason), el("span", "", f.advice)); $("flags").appendChild(box); });
+    d.flags.forEach((f, i) => {
+      const box = el("div", "ev"); box.append(el("div", "n", String(i + 1).padStart(2, "0")));
+      const body = el("div"); body.append(el("b", "", f.reason), el("span", "", f.advice)); box.append(body); $("flags").appendChild(box);
+    });
+    $("evcount").textContent = d.flags.length ? d.flags.length + " found" : "";
     $("noflags").classList.toggle("hidden", d.flags.length > 0);
 
     $("steps").innerHTML = ""; d.steps.forEach(s => $("steps").appendChild(el("li", "", s)));
 
     const v = d.verify;
     $("vinfo").textContent = v.company
-      ? "Company detected: " + v.company + (v.domain ? " · email domain: " + v.domain : "") + ". Edit the company name above if this is wrong."
-      : "We couldn't detect a company name. Enter it above for tailored links.";
+      ? "Company we picked up: " + v.company + (v.domain ? " · email domain: " + v.domain : "") + ". Wrong? Fix it in the box above and run the check again."
+      : "We couldn't pick out a company name. Add it above for tailored links.";
     $("links").innerHTML = "";
-    v.links.forEach(l => { const a = el("a", "chip", l.label + " ↗"); a.href = l.url; a.target = "_blank"; a.rel = "noopener"; $("links").appendChild(a); });
+    v.links.forEach(l => { const li = el("li"); const a = el("a", "", l.label + " →"); a.href = l.url; a.target = "_blank"; a.rel = "noopener"; li.appendChild(a); $("links").appendChild(li); });
 
     $("result").classList.remove("hidden");
+    fillMeter(d.score);
     runExtras(d, $("text").value);
-    // animate the gauge and the number
-    const arc = $("arc"); arc.style.strokeDashoffset = 157;
-    requestAnimationFrame(() => requestAnimationFrame(() => { arc.style.strokeDashoffset = 157 * (1 - d.score / 100); }));
-    let n = 0; const target = d.score; const step = Math.max(1, Math.round(target / 30));
-    const t = setInterval(() => { n = Math.min(target, n + step); $("scorenum").textContent = n; if (n >= target) clearInterval(t); }, 22);
     $("result").scrollIntoView({behavior: "smooth", block: "start"});
   } catch (e) {
     $("err").textContent = "Something went wrong. Please try again."; $("err").classList.remove("hidden");
-  } finally { btn.disabled = false; btn.textContent = "Check this offer"; }
+  } finally { btn.disabled = false; btn.textContent = "Run the check →"; }
 });
 
 $("share").addEventListener("click", async () => {
@@ -205,13 +223,13 @@ document.querySelectorAll("#fb button").forEach(b => b.addEventListener("click",
 function loadScript(src){ return new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); }); }
 $("shot").addEventListener("change", async e => {
   const file = e.target.files[0]; if (!file) return;
-  const st = $("ocrstatus"); st.classList.remove("hidden"); st.textContent = "Reading text from screenshot (first time may take a few seconds)...";
+  const st = $("ocrstatus"); st.classList.remove("hidden"); st.textContent = "Reading text from the screenshot (the first time takes a few seconds)…";
   try {
     if (!window.Tesseract) await loadScript("https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js");
     const { data } = await Tesseract.recognize(file, "eng");
     const t = (data.text || "").trim();
     if (t.length < 20) { st.textContent = "Couldn't read enough text. Try a clearer screenshot or paste the text."; return; }
-    $("text").value = t; st.textContent = "Text extracted. Check it looks right, then press Check.";
+    $("text").value = t; st.textContent = "Text pulled from the image. Check it reads right, then run the check.";
   } catch (err) { st.textContent = "Couldn't read the screenshot. Please paste the text instead."; }
   e.target.value = "";
 });
