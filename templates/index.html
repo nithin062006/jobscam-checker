@@ -95,7 +95,8 @@
       <label class="opt" style="margin:0"><input type="radio" name="clabel" value="unsure"> Not sure</label>
     </div>
     <label class="opt"><input type="checkbox" id="cconsent"> I'm happy for this message to be stored and used to improve the checker.</label>
-    <p style="margin-top:14px"><button class="linkbtn" id="csend">Donate this message</button> <span id="cmsg" class="hint"></span></p>
+    <p id="cthanks" class="say hidden" style="margin-top:14px">Thank you. That helps the next person.</p>
+    <p id="cform" style="margin-top:14px"><button class="linkbtn" id="csend">Donate this message</button> <span id="cmsg" class="hint"></span></p>
   </div>
   {% endif %}
 </section>
@@ -175,7 +176,7 @@ async function runExtras(d, text) {
 $("go").addEventListener("click", async () => {
   $("err").classList.add("hidden"); $("result").classList.add("hidden");
   $("fb").classList.remove("hidden"); $("fbthanks").classList.add("hidden"); $("sharemsg").textContent = "";
-  if ($("csend")) { $("csend").disabled = false; $("cmsg").textContent = ""; $("cconsent").checked = false; }
+  if ($("csend")) { $("csend").disabled = false; $("cmsg").textContent = ""; $("cconsent").checked = false; $("cthanks").classList.add("hidden"); document.querySelectorAll("#contrib .opt, #contrib .hint, #cform").forEach(x => x.classList.remove("hidden")); document.querySelectorAll("input[name=clabel]").forEach(x => x.checked = false); }
   const btn = $("go"); btn.disabled = true; btn.textContent = "Reading…";
   try {
     const r = await fetch("/api/check", {method:"POST", headers:{"Content-Type":"application/json"},
@@ -246,7 +247,7 @@ if ($("csend")) $("csend").addEventListener("click", async () => {
       body: JSON.stringify({text: $("text").value, label: lab.value, consent: true,
                             level: last ? last.level : "", score: last ? last.score : null})});
     const j = await r.json();
-    if (j.ok) { $("contrib").innerHTML = "<p class='say'>Thank you. That helps the next person.</p>"; return; }
+    if (j.ok) { $("cthanks").classList.remove("hidden"); document.querySelectorAll("#contrib .opt, #contrib .hint, #cform").forEach(x => x.classList.add("hidden")); return; }
     msg.textContent = j.error || "Something went wrong.";
   } catch (e) { msg.textContent = "Something went wrong."; }
   $("csend").disabled = false;
