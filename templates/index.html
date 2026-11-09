@@ -3,47 +3,77 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Job Offer Checker</title>
-<meta name="description" content="Paste a job offer or recruiter message and see common scam warning signs. Free, private, no sign-up.">
+<title>Job Offer Checker – Is this job offer fake?</title>
+<meta name="description" content="Paste a job offer, recruiter message, or WhatsApp screenshot and see common scam warning signs, plus links to verify the company. Free, private, no sign-up.">
+<meta property="og:title" content="Job Offer Checker – Is this job offer fake?">
+<meta property="og:description" content="Free tool to spot fake job offers. Paste the message or upload a screenshot. Nothing is stored.">
+<meta property="og:type" content="website">
 <style>
   :root{--bg:#f6f8fb;--card:#fff;--ink:#14213d;--muted:#5b6b82;--line:#dfe6ef;--brand:#2563eb;--low:#15803d;--med:#b45309;--high:#b91c1c}
   @media (prefers-color-scheme:dark){:root{--bg:#0f1623;--card:#172033;--ink:#e8eefc;--muted:#9fb0cc;--line:#26324a;--brand:#60a5fa;--low:#4ade80;--med:#fbbf24;--high:#f87171}}
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.55}
-  .wrap{max-width:720px;margin:0 auto;padding:28px 16px 60px}
+  .wrap{max-width:720px;margin:0 auto;padding:20px 16px 60px}
+  nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;font-size:.95rem}
+  nav a{margin-left:14px}
   h1{font-size:1.7rem;margin:0 0 6px}
   .sub{color:var(--muted);margin:0 0 20px}
-  textarea{width:100%;min-height:200px;padding:14px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;resize:vertical}
-  button{background:var(--brand);color:#fff;border:0;border-radius:10px;padding:12px 20px;font:inherit;font-weight:600;cursor:pointer;margin-top:12px}
-  button.secondary{background:transparent;color:var(--ink);border:1px solid var(--line);padding:8px 14px;margin-right:8px}
+  textarea,input[type=text]{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit}
+  textarea{min-height:190px;resize:vertical}
+  input[type=text]{margin-top:10px}
+  button,.filebtn{background:var(--brand);color:#fff;border:0;border-radius:10px;padding:12px 20px;font:inherit;font-weight:600;cursor:pointer;display:inline-block}
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;align-items:center}
+  .filebtn.alt,button.secondary{background:transparent;color:var(--ink);border:1px solid var(--line);padding:10px 14px}
+  input[type=file]{display:none}
   button:disabled{opacity:.6;cursor:wait}
   .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-top:20px}
   .level{font-size:1.3rem;font-weight:700}
   .Low{color:var(--low)}.Medium{color:var(--med)}.High{color:var(--high)}
-  ul{padding-left:18px}li{margin-bottom:10px}
-  .adv{color:var(--muted);font-size:.92rem}
+  ul{padding-left:18px;margin:8px 0}li{margin-bottom:10px}
+  .adv,.hint{color:var(--muted);font-size:.9rem}
+  .tag{display:inline-block;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:.8rem;margin:2px 4px 2px 0}
   .err{color:var(--high);margin-top:12px}
   .note{color:var(--muted);font-size:.85rem;margin-top:24px}
   .hidden{display:none}
   a{color:var(--brand)}
+  h3{margin:14px 0 4px;font-size:1.02rem}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>Job Offer Checker</h1>
-  <p class="sub">Paste a job offer, recruiter message, or email. We check it for common scam warning signs. Free, no sign-up, and your text is not stored.</p>
+  <nav><strong>Job Offer Checker</strong><span><a href="/">Check</a><a href="/scams">Common scams</a></span></nav>
+  <h1>Is this job offer fake?</h1>
+  <p class="sub">Paste the message, or upload a screenshot. We check for common scam signs and help you verify the company. Free, no sign-up, nothing is stored.</p>
 
   <textarea id="text" placeholder="Paste the full message here..."></textarea>
-  <button id="go">Check this offer</button>
+  <input type="text" id="company" maxlength="80" placeholder="Company name (optional, we try to detect it)">
+  <div class="row">
+    <button id="go">Check this offer</button>
+    <label class="filebtn alt" for="shot">📷 Upload screenshot</label>
+    <input type="file" id="shot" accept="image/*">
+  </div>
+  <div id="ocrstatus" class="hint hidden"></div>
   <div id="err" class="err hidden"></div>
 
   <div id="result" class="card hidden">
     <div>Risk level: <span id="level" class="level"></span> <span id="score" class="adv"></span></div>
+    <div id="types"></div>
     <p id="summary"></p>
+    <h3>Warning signs found</h3>
     <ul id="flags"></ul>
-    <div id="fb">
+    <div id="noflags" class="adv hidden">No specific warning signs matched.</div>
+    <h3>What to do next</h3>
+    <ul id="steps"></ul>
+    <h3>Verify the company</h3>
+    <div id="vinfo" class="adv"></div>
+    <ul id="links"></ul>
+    <div class="row">
+      <button class="secondary" id="share">Share this warning</button>
+      <span id="sharemsg" class="hint"></span>
+    </div>
+    <div id="fb" style="margin-top:14px">
       <span class="adv">Was this helpful?</span><br>
-      <button class="secondary" data-v="1">Yes</button><button class="secondary" data-v="0">No</button>
+      <button class="secondary" data-v="1">Yes</button> <button class="secondary" data-v="0">No</button>
     </div>
     <div id="fbthanks" class="adv hidden">Thanks for the feedback.</div>
   </div>
@@ -57,44 +87,76 @@
     </ul>
   </div>
 
-  <p class="note">This tool uses simple rules and can be wrong. A low score doesn't mean an offer is genuine, and a high score doesn't prove it's fake. Always verify the company on its official website and never pay to get a job.</p>
+  <p class="note">This tool uses simple rules and can be wrong. A low score doesn't mean an offer is genuine, and a high score doesn't prove it's fake. Always verify the company on its official website and never pay to get a job. Screenshot text is read inside your browser, and images are not uploaded.</p>
 </div>
 
 <script>
 const $ = id => document.getElementById(id);
-let lastLevel = "";
+let last = null;
+
+function fill(ul, items, render){ ul.innerHTML = ""; items.forEach(i => { const li = document.createElement("li"); render(li, i); ul.appendChild(li); }); }
 
 $("go").addEventListener("click", async () => {
-  $("err").classList.add("hidden");
-  $("result").classList.add("hidden");
-  $("fb").classList.remove("hidden");
-  $("fbthanks").classList.add("hidden");
+  $("err").classList.add("hidden"); $("result").classList.add("hidden");
+  $("fb").classList.remove("hidden"); $("fbthanks").classList.add("hidden"); $("sharemsg").textContent = "";
   const btn = $("go"); btn.disabled = true; btn.textContent = "Checking...";
   try {
-    const r = await fetch("/api/check", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({text: $("text").value})});
+    const r = await fetch("/api/check", {method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({text: $("text").value, company: $("company").value})});
     const d = await r.json();
     if (d.error) { $("err").textContent = d.error; $("err").classList.remove("hidden"); return; }
-    lastLevel = d.level;
+    last = d;
     $("level").textContent = d.level; $("level").className = "level " + d.level;
     $("score").textContent = "(score " + d.score + "/100)";
     $("summary").textContent = d.summary;
-    const ul = $("flags"); ul.innerHTML = "";
-    d.flags.forEach(f => {
-      const li = document.createElement("li");
+    $("types").innerHTML = "";
+    d.types.forEach(t => { const s = document.createElement("span"); s.className = "tag"; s.textContent = t; $("types").appendChild(s); });
+    fill($("flags"), d.flags, (li, f) => {
       const a = document.createElement("div"); a.textContent = f.reason;
-      const b = document.createElement("div"); b.className = "adv"; b.textContent = f.advice;
-      li.appendChild(a); li.appendChild(b); ul.appendChild(li);
-    });
+      const b = document.createElement("div"); b.className = "adv"; b.textContent = f.advice; li.append(a, b); });
+    $("noflags").classList.toggle("hidden", d.flags.length > 0);
+    fill($("steps"), d.steps, (li, s) => { li.textContent = s; });
+    const v = d.verify;
+    $("vinfo").textContent = v.company ? ("Company detected: " + v.company + (v.domain ? " · email domain: " + v.domain : "") + ". Edit the company name above if this is wrong.")
+                                      : "We couldn't detect a company name. Enter it above for tailored links.";
+    fill($("links"), v.links, (li, l) => { const a = document.createElement("a"); a.href = l.url; a.textContent = l.label; a.target = "_blank"; a.rel = "noopener"; li.appendChild(a); });
     $("result").classList.remove("hidden");
   } catch (e) {
     $("err").textContent = "Something went wrong. Please try again."; $("err").classList.remove("hidden");
   } finally { btn.disabled = false; btn.textContent = "Check this offer"; }
 });
 
+$("share").addEventListener("click", async () => {
+  if (!last) return;
+  const msg = "Job offer check: " + last.level + " scam risk (" + last.score + "/100)." +
+    (last.flags.length ? " Warning signs: " + last.flags.slice(0,3).map(f => f.reason).join(" ") : "") +
+    " Check your own offers free: " + location.origin;
+  try {
+    if (navigator.share) { await navigator.share({text: msg}); }
+    else { await navigator.clipboard.writeText(msg); $("sharemsg").textContent = "Copied to clipboard."; }
+  } catch (e) { /* user cancelled */ }
+});
+
 document.querySelectorAll("#fb button").forEach(b => b.addEventListener("click", async () => {
-  try { await fetch("/api/feedback", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({helpful: b.dataset.v === "1", level: lastLevel})}); } catch(e) {}
+  try { await fetch("/api/feedback", {method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({helpful: b.dataset.v === "1", level: last ? last.level : ""})}); } catch(e) {}
   $("fb").classList.add("hidden"); $("fbthanks").classList.remove("hidden");
 }));
+
+// Screenshot OCR runs fully in the browser (tesseract.js loaded on demand).
+function loadScript(src){ return new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); }); }
+$("shot").addEventListener("change", async e => {
+  const file = e.target.files[0]; if (!file) return;
+  const st = $("ocrstatus"); st.classList.remove("hidden"); st.textContent = "Reading text from screenshot (first time may take a few seconds)...";
+  try {
+    if (!window.Tesseract) await loadScript("https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js");
+    const { data } = await Tesseract.recognize(file, "eng");
+    const t = (data.text || "").trim();
+    if (t.length < 20) { st.textContent = "Couldn't read enough text. Try a clearer screenshot or paste the text."; return; }
+    $("text").value = t; st.textContent = "Text extracted. Check it looks right, then press Check.";
+  } catch (err) { st.textContent = "Couldn't read the screenshot. Please paste the text instead."; }
+  e.target.value = "";
+});
 </script>
 </body>
 </html>

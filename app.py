@@ -21,8 +21,14 @@ def index():
 def check():
     data = request.get_json(silent=True) or {}
     text = str(data.get("text", ""))[:8000]
+    company = str(data.get("company", ""))[:80]
     # The submitted text is analysed in memory and never stored.
-    return jsonify(analyze(text))
+    return jsonify(analyze(text, company))
+
+
+@app.get("/scams")
+def scams():
+    return render_template("scams.html")
 
 
 @app.post("/api/feedback")
